@@ -4,6 +4,8 @@ const int WINDOW_WIDTH = 600;
 const int WINDOW_HEIGHT = 400;
 const int BALL_WIDTH = 7;
 const int BALL_HEIGHT = 7;
+const int PADDLE_WIDTH = 7;
+const int PADDLE_HEIGHT = 60;
 
 class Vec2
 {
@@ -63,6 +65,29 @@ class Ball
         SDL_Rect rect{};
 };
 
+class Paddle
+{
+    public:
+        Paddle(Vec2 position)
+            : position(position)
+        {
+            rect.x = static_cast<int>(position.x);
+            rect.y = static_cast<int>(position.y);
+            rect.w = PADDLE_WIDTH;
+            rect.h = PADDLE_HEIGHT;
+        }
+
+        void Draw(SDL_Renderer* renderer)
+        {
+            rect.y = static_cast<int>(position.y);
+
+            SDL_RenderFillRect(renderer, &rect);
+        }
+
+        Vec2 position;
+        SDL_Rect rect{};
+};
+
 int main()
 {
     // Init SDL
@@ -76,6 +101,10 @@ int main()
             (WINDOW_WIDTH / 2.0f) - (BALL_WIDTH / 2.0f), 
             (WINDOW_HEIGHT / 2.0f) - (BALL_HEIGHT / 2.0f)
             ));
+
+    // create paddles
+    Paddle paddleLeft(Vec2(20.0f, (WINDOW_HEIGHT / 2.0f) - (PADDLE_HEIGHT / 2.0f)));
+    Paddle paddleRight(Vec2(WINDOW_WIDTH - 20.0f, (WINDOW_HEIGHT / 2.0f) - (PADDLE_HEIGHT / 2.0f)));
 
     // Game logic
     {
@@ -119,6 +148,10 @@ int main()
 
             // ball
             ball.Draw(renderer);
+
+            // render paddles
+            paddleLeft.Draw(renderer);
+            paddleRight.Draw(renderer);
 
             // Present the backbuffer
             SDL_RenderPresent(renderer);
