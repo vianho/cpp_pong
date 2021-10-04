@@ -149,6 +149,38 @@ class PlayerScore
 
 };
 
+bool checkPaddleCollision(Ball const& ball, Paddle const& paddle)
+{
+    float ballLeft = ball.position.x;
+    float ballRight = ball.position.x + BALL_WIDTH;
+    float ballTop = ball.position.y;
+    float ballBottom = ball.position.y + BALL_HEIGHT;
+
+    float paddleLeft = paddle.position.x;
+    float paddleRight = paddle.position.x + PADDLE_WIDTH;
+    float paddleTop = paddle.position.y;
+    float paddleBottom = paddle.position.y + PADDLE_HEIGHT;
+
+    if (ballLeft >= paddleRight)
+    {
+        return false;
+    }
+    if (ballRight <= paddleLeft)
+    {
+        return false;
+    }
+    if (ballTop >= paddleBottom)
+    {
+        return false;
+    }
+    if (ballBottom <= paddleTop)
+    {
+        return false;
+    }
+
+    return true;
+}
+
 int main()
 {
     // Init SDL
@@ -161,7 +193,7 @@ int main()
     TTF_Font* scoreFont = TTF_OpenFont("bin/DejaVuSansMono.ttf", 20);
 
     // init ball
-    const float BALL_SPEED = 1.0f;
+    const float BALL_SPEED = 0.5f;
     Ball ball(
         Vec2((WINDOW_WIDTH / 2.0f) - (BALL_WIDTH / 2.0f), 
             (WINDOW_HEIGHT / 2.0f) - (BALL_HEIGHT / 2.0f)),
@@ -280,6 +312,12 @@ int main()
             paddleRight.Update(dt);
 
             ball.Update(dt);
+
+            // check collision
+            if (checkPaddleCollision(ball, paddleLeft) || checkPaddleCollision(ball, paddleRight))
+            {
+                ball.velocity.x = -ball.velocity.x;
+            }
 
             // Clear window
             // RGBA
