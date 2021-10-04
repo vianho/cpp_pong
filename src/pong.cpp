@@ -46,13 +46,18 @@ class Vec2
 class Ball
 {
     public:
-        Ball(Vec2 position)
-            : position(position)
+        Ball(Vec2 position, Vec2 velocity)
+            : position(position), velocity(velocity)
         {
             rect.x = static_cast<int>(position.x);
             rect.y = static_cast<int>(position.y);
             rect.w = BALL_WIDTH;
             rect.h = BALL_HEIGHT;
+        }
+
+        void Update(float dt)
+        {
+            position += velocity * dt;
         }
 
         void Draw(SDL_Renderer* renderer)
@@ -64,6 +69,7 @@ class Ball
         }
 
         Vec2 position;
+        Vec2 velocity;
         SDL_Rect rect{};
 };
 
@@ -155,11 +161,11 @@ int main()
     TTF_Font* scoreFont = TTF_OpenFont("bin/DejaVuSansMono.ttf", 20);
 
     // init ball
+    const float BALL_SPEED = 1.0f;
     Ball ball(
-        Vec2(
-            (WINDOW_WIDTH / 2.0f) - (BALL_WIDTH / 2.0f), 
-            (WINDOW_HEIGHT / 2.0f) - (BALL_HEIGHT / 2.0f)
-            ));
+        Vec2((WINDOW_WIDTH / 2.0f) - (BALL_WIDTH / 2.0f), 
+            (WINDOW_HEIGHT / 2.0f) - (BALL_HEIGHT / 2.0f)),
+        Vec2(BALL_SPEED, 0.0f));
 
     // create paddles
     Paddle paddleLeft(
@@ -273,12 +279,13 @@ int main()
             paddleLeft.Update(dt);
             paddleRight.Update(dt);
 
+            ball.Update(dt);
+
             // Clear window
             // RGBA
             SDL_SetRenderDrawColor(renderer, 0x0, 0x0, 0x0, 0xFF);
             SDL_RenderClear(renderer);
 
-            
             // Rendering is done below
             
             // net
