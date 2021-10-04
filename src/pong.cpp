@@ -161,7 +161,7 @@ int main()
     // Cleanup
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
-    SDL_QUIT;
+    SDL_Quit();
 
     return 0;
 }
