@@ -8,7 +8,21 @@ const int BALL_WIDTH = 7;
 const int BALL_HEIGHT = 7;
 const int PADDLE_WIDTH = 7;
 const int PADDLE_HEIGHT = 60;
+const float BALL_SPEED = 0.5f;
 
+enum class CollisionType
+{
+    None,
+    Top,
+    Middle,
+    Bottom
+};
+
+struct Contact
+{
+    CollisionType type;
+    float penetration;
+};
 class Vec2
 {
     public:
@@ -53,6 +67,21 @@ class Ball
             rect.y = static_cast<int>(position.y);
             rect.w = BALL_WIDTH;
             rect.h = BALL_HEIGHT;
+        }
+
+        void CollideWithPaddle(Contact const& contact)
+        {
+            position.x += contact.penetration;
+            velocity.x = -velocity.x;
+
+            if (contact.type == CollisionType::Top)
+            {
+                velocity.y = -0.75f * BALL_SPEED;
+            }
+            if (contact.type == CollisionType::Bottom)
+            {
+                velocity.y = 0.75f * BALL_SPEED;
+            }
         }
 
         void Update(float dt)
@@ -149,7 +178,7 @@ class PlayerScore
 
 };
 
-bool checkPaddleCollision(Ball const& ball, Paddle const& paddle)
+Contact checkPaddleCollision(Ball const& ball, Paddle const& paddle)
 {
     float ballLeft = ball.position.x;
     float ballRight = ball.position.x + BALL_WIDTH;
@@ -161,25 +190,57 @@ bool checkPaddleCollision(Ball const& ball, Paddle const& paddle)
     float paddleTop = paddle.position.y;
     float paddleBottom = paddle.position.y + PADDLE_HEIGHT;
 
+    Contact contact{};
+
     if (ballLeft >= paddleRight)
     {
-        return false;
+        return contact;
     }
     if (ballRight <= paddleLeft)
     {
-        return false;
+        return contact;
     }
     if (ballTop >= paddleBottom)
     {
-        return false;
+        return contact;
     }
     if (ballBottom <= paddleTop)
     {
-        return false;
+        return contact;
     }
 
-    return true;
+    // actually collide
+    float paddleRangeUpper = paddleBottom - (PADDLE_HEIGHT * 2.0f / 3.0f);
+    float paddleRangeMiddle = paddleBottom - (PADDLE_HEIGHT / 3.0f);
+
+    if (ball.velocity.x < 0)
+    {
+        // Left paddle
+        contact.penetration = paddleRight - ballLeft;
+    }
+    else if (ball.velocity.x > 0)
+    {
+        // Right paddle
+        contact.penetration = paddleLeft - ballRight;
+    }
+
+    if ((ballBottom > paddleTop) && (ballBottom < paddleRangeUpper))
+    {
+        contact.type = CollisionType::Top;
+    }
+    else if ((ballBottom > paddleRangeUpper) && (ballBottom < paddleRangeMiddle))
+    {
+        contact.type = CollisionType::Middle;
+    }
+    else
+    {
+        contact.type = CollisionType::Bottom;
+    }
+
+    return contact;
 }
+
+
 
 int main()
 {
@@ -193,7 +254,6 @@ int main()
     TTF_Font* scoreFont = TTF_OpenFont("bin/DejaVuSansMono.ttf", 20);
 
     // init ball
-    const float BALL_SPEED = 0.5f;
     Ball ball(
         Vec2((WINDOW_WIDTH / 2.0f) - (BALL_WIDTH / 2.0f), 
             (WINDOW_HEIGHT / 2.0f) - (BALL_HEIGHT / 2.0f)),
@@ -314,9 +374,15 @@ int main()
             ball.Update(dt);
 
             // check collision
-            if (checkPaddleCollision(ball, paddleLeft) || checkPaddleCollision(ball, paddleRight))
+            if (Contact contact = checkPaddleCollision(ball, paddleLeft);
+                contact.type != CollisionType::None)
             {
-                ball.velocity.x = -ball.velocity.x;
+                ball.CollideWithPaddle(contact);
+            }
+            if (Contact contact = checkPaddleCollision(ball, paddleRight);
+                contact.type != CollisionType::None)
+            {
+                ball.CollideWithPaddle(contact);
             }
 
             // Clear window
