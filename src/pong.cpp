@@ -15,7 +15,9 @@ enum class CollisionType
     None,
     Top,
     Middle,
-    Bottom
+    Bottom,
+    Left,
+    Right
 };
 
 struct Contact
@@ -82,6 +84,30 @@ class Ball
             {
                 velocity.y = 0.75f * BALL_SPEED;
             }
+        }
+
+        void CollideWithWall(Contact const& contact)
+        {
+            if (contact.type == CollisionType::Top || contact.type == CollisionType::Bottom)
+            {
+                position.y += contact.penetration;
+                velocity.y = -velocity.y;
+            }
+            else if (contact.type == CollisionType::Left)
+            {
+                position.x = WINDOW_WIDTH / 2.0f;
+                position.y = WINDOW_HEIGHT / 2.0f;
+                velocity.x = -BALL_SPEED;
+                velocity.y = BALL_SPEED;
+            }
+            else if (contact.type == CollisionType::Right)
+            {
+                position.x = WINDOW_WIDTH / 2.0f;
+                position.y = WINDOW_HEIGHT / 2.0f;
+                velocity.x = BALL_SPEED;
+                velocity.y = BALL_SPEED;
+            }
+
         }
 
         void Update(float dt)
@@ -240,6 +266,36 @@ Contact checkPaddleCollision(Ball const& ball, Paddle const& paddle)
     return contact;
 }
 
+Contact checkWallCollision(Ball const& ball)
+{
+    float ballLeft = ball.position.x;
+    float ballRight = ball.position.x + BALL_WIDTH;
+    float ballTop = ball.position.y;
+    float ballBottom = ball.position.y + BALL_HEIGHT;
+
+    Contact contact {};
+
+    if (ballTop < 0.0f)
+    {
+        contact.type = CollisionType::Top;
+        contact.penetration = -ballTop;
+    }
+    else if (ballBottom > WINDOW_HEIGHT)
+    {
+        contact.type = CollisionType::Bottom;
+        contact.penetration = WINDOW_HEIGHT - ballBottom;
+    }
+    else if (ballLeft < 0.0f)
+    {
+        contact.type = CollisionType::Left;
+    }
+    else if (ballRight > WINDOW_WIDTH)
+    {
+        contact.type = CollisionType::Right;
+    }
+
+    return contact;
+}
 
 
 int main()
@@ -261,10 +317,10 @@ int main()
 
     // create paddles
     Paddle paddleLeft(
-        Vec2(20.0f, (WINDOW_HEIGHT / 2.0f) - (PADDLE_HEIGHT / 2.0f)), 
+        Vec2(20.0f, (WINDOW_HEIGHT / 2.0f) - (PADDLE_HEIGHT / 4.0f)), 
         Vec2(0.0f, 0.0f));
     Paddle paddleRight(
-        Vec2(WINDOW_WIDTH - 20.0f, (WINDOW_HEIGHT / 2.0f) - (PADDLE_HEIGHT / 2.0f)),
+        Vec2(WINDOW_WIDTH - 20.0f, (WINDOW_HEIGHT / 2.0f) - (PADDLE_HEIGHT / 4.0f)),
         Vec2(0.0f, 0.0f));
 
     //create score
@@ -383,6 +439,10 @@ int main()
                 contact.type != CollisionType::None)
             {
                 ball.CollideWithPaddle(contact);
+            }
+            if (Contact contact = checkWallCollision(ball); contact.type != CollisionType::None)
+            {
+                ball.CollideWithWall(contact);
             }
 
             // Clear window
