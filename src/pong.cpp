@@ -1,6 +1,7 @@
 #include <chrono>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#include <string>
 
 const int WINDOW_WIDTH = 600;
 const int WINDOW_HEIGHT = 400;
@@ -190,6 +191,20 @@ class PlayerScore
             SDL_DestroyTexture(texture);
         }
 
+        void SetScore(int score)
+        {
+            SDL_FreeSurface(surface);
+            SDL_DestroyTexture(texture);
+        
+            surface = TTF_RenderText_Solid(font, std::to_string(score).c_str(), {0xFF, 0xFF, 0xFF, 0xFF});
+            texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+            int width, height;
+            SDL_QueryTexture(texture, nullptr, nullptr, &width, &height);
+            rect.w = width;
+            rect.h = height;
+        }
+
         void Draw()
         {
             SDL_RenderCopy(renderer, texture, nullptr, &rect);
@@ -324,8 +339,8 @@ int main()
         Vec2(0.0f, 0.0f));
 
     //create score
-    PlayerScore playerOneScoreText(Vec2(WINDOW_WIDTH / 4, 20), renderer, scoreFont);
-    PlayerScore playerTwoScoreText(Vec2(WINDOW_WIDTH * 3 / 4, 20), renderer, scoreFont);
+    PlayerScore playerLeftScoreText(Vec2(WINDOW_WIDTH / 4, 20), renderer, scoreFont);
+    PlayerScore playerRightScoreText(Vec2(WINDOW_WIDTH * 3 / 4, 20), renderer, scoreFont);
 
     // Game logic
     {
@@ -338,6 +353,9 @@ int main()
         };
 
         const float PADDLE_SPEED = 1.0f;
+
+        int playerLeftScore = 0;
+        int playerRightScore = 0;
 
         bool running = true;
         bool buttons[4] = {};
@@ -443,6 +461,16 @@ int main()
             if (Contact contact = checkWallCollision(ball); contact.type != CollisionType::None)
             {
                 ball.CollideWithWall(contact);
+                if (contact.type == CollisionType::Left)
+                {
+                    playerRightScore += 1;
+                    playerRightScoreText.SetScore(playerRightScore);
+                }
+                if (contact.type == CollisionType::Right)
+                {
+                    playerLeftScore += 1;
+                    playerLeftScoreText.SetScore(playerLeftScore);
+                }
             }
 
             // Clear window
@@ -470,8 +498,8 @@ int main()
             paddleRight.Draw(renderer);
 
             // render score text
-            playerOneScoreText.Draw();
-            playerTwoScoreText.Draw();
+            playerLeftScoreText.Draw();
+            playerRightScoreText.Draw();
 
             // Present the backbuffer
             SDL_RenderPresent(renderer);
