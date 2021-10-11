@@ -1,6 +1,7 @@
 #include <chrono>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_mixer.h>
 #include <string>
 
 const int WINDOW_WIDTH = 600;
@@ -316,13 +317,19 @@ Contact checkWallCollision(Ball const& ball)
 int main()
 {
     // Init SDL
-    SDL_Init(SDL_INIT_VIDEO);
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
     TTF_Init();
+    Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
+
     SDL_Window *window = SDL_CreateWindow("Pong", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, 0);
 
     // Init Font
     TTF_Font* scoreFont = TTF_OpenFont("bin/DejaVuSansMono.ttf", 20);
+
+    // Init Sound
+    Mix_Chunk* paddleHitSound = Mix_LoadWAV("bin/paddleHit.wav");
+    Mix_Chunk* wallHitSound = Mix_LoadWAV("bin/wallHit.wav");
 
     // init ball
     Ball ball(
@@ -451,15 +458,18 @@ int main()
             if (Contact contact = checkPaddleCollision(ball, paddleLeft);
                 contact.type != CollisionType::None)
             {
+                Mix_PlayChannel(-1, paddleHitSound, 0);
                 ball.CollideWithPaddle(contact);
             }
             if (Contact contact = checkPaddleCollision(ball, paddleRight);
                 contact.type != CollisionType::None)
             {
+                Mix_PlayChannel(-1, paddleHitSound, 0);
                 ball.CollideWithPaddle(contact);
             }
             if (Contact contact = checkWallCollision(ball); contact.type != CollisionType::None)
             {
+                Mix_PlayChannel(-1, wallHitSound, 0);
                 ball.CollideWithWall(contact);
                 if (contact.type == CollisionType::Left)
                 {
@@ -511,9 +521,12 @@ int main()
     }
 
     // Cleanup
+    Mix_FreeChunk(wallHitSound);
+    Mix_FreeChunk(paddleHitSound);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     TTF_CloseFont(scoreFont);
+    Mix_Quit();
     TTF_Quit();
     SDL_Quit();
 
